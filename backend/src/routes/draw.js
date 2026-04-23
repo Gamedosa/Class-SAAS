@@ -1,7 +1,15 @@
 const router = require('express').Router();
+const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const Participant = require('../models/Participant');
 const DrawHistory = require('../models/DrawHistory');
+
+const MAX_DRAW_ATTEMPTS = 200;
+const FORBIDDEN_PAIRS_HISTORY_LIMIT = 4;
+
+function isValidId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -14,7 +22,7 @@ function shuffle(array) {
 function buildValidAssignment(ids, forbiddenPairs) {
   const n = ids.length;
   // Try up to 200 times to find a valid derangement
-  for (let attempt = 0; attempt < 200; attempt++) {
+  for (let attempt = 0; attempt < MAX_DRAW_ATTEMPTS; attempt++) {
     const receivers = shuffle([...ids]);
     let valid = true;
     for (let i = 0; i < n; i++) {
@@ -31,6 +39,7 @@ function buildValidAssignment(ids, forbiddenPairs) {
 
 router.post('/:eventId', async (req, res) => {
   try {
+    if (!isValidId(req.params.eventId)) return res.status(400).json({ error: 'Invalid eventId' });
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ error: 'Event not found' });
     const passwordMatch = await event.checkPassword(req.body.sponsorPassword || '');
@@ -47,7 +56,7 @@ router.post('/:eventId', async (req, res) => {
     }
 
     // Collect forbidden pairs from the last 4 events
-    const recentHistory = await DrawHistory.find().sort({ createdAt: -1 }).limit(4);
+    const recentHistory = await DrawHistory.find().sort({ createdAt: -1 }).limit(FORBIDDEN_PAIRS_HISTORY_LIMIT);
     const forbiddenPairs = new Set();
     for (const history of recentHistory) {
       for (const pair of history.pairs) {

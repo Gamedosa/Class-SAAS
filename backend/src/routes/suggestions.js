@@ -12,8 +12,10 @@ router.post('/', async (req, res) => {
     if (!isValidId(participantId) || !isValidId(eventId)) {
       return res.status(400).json({ error: 'Invalid id(s) provided' });
     }
+    const pId = new mongoose.Types.ObjectId(participantId);
+    const eId = new mongoose.Types.ObjectId(eventId);
     const doc = await GiftSuggestion.findOneAndUpdate(
-      { participantId, eventId },
+      { participantId: pId, eventId: eId },
       { suggestions },
       { upsert: true, new: true }
     );
@@ -25,6 +27,7 @@ router.post('/', async (req, res) => {
 
 router.get('/event/:eventId', async (req, res) => {
   try {
+    if (!isValidId(req.params.eventId)) return res.status(400).json({ error: 'Invalid eventId' });
     const suggestions = await GiftSuggestion.find({ eventId: req.params.eventId }).populate(
       'participantId',
       'name codename'
@@ -37,6 +40,9 @@ router.get('/event/:eventId', async (req, res) => {
 
 router.get('/participant/:participantId', async (req, res) => {
   try {
+    if (!isValidId(req.params.participantId)) {
+      return res.status(400).json({ error: 'Invalid participant id' });
+    }
     const suggestion = await GiftSuggestion.findOne({ participantId: req.params.participantId });
     if (!suggestion) return res.status(404).json({ error: 'No suggestions found' });
     res.json(suggestion);

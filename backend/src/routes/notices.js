@@ -26,6 +26,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:eventId', async (req, res) => {
   try {
+    if (!isValidId(req.params.eventId)) return res.status(400).json({ error: 'Invalid eventId' });
     const notices = await Notice.find({ eventId: req.params.eventId }).sort({ createdAt: -1 });
     res.json(notices);
   } catch (err) {

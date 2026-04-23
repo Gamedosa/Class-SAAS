@@ -1,11 +1,17 @@
 const router = require('express').Router();
+const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const Participant = require('../models/Participant');
 const Message = require('../models/Message');
 const DrawHistory = require('../models/DrawHistory');
 
+function isValidId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
+
 router.get('/:eventId', async (req, res) => {
   try {
+    if (!isValidId(req.params.eventId)) return res.status(400).json({ error: 'Invalid eventId' });
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ error: 'Event not found' });
     if (event.status !== 'closed') {
