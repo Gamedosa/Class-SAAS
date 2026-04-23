@@ -1,10 +1,19 @@
 const router = require('express').Router();
+const mongoose = require('mongoose');
 const Message = require('../models/Message');
 const Participant = require('../models/Participant');
+
+function isValidId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
 
 router.post('/', async (req, res) => {
   try {
     const { senderId, recipientId, eventId, content } = req.body;
+
+    if (!isValidId(senderId) || !isValidId(recipientId) || !isValidId(eventId)) {
+      return res.status(400).json({ error: 'Invalid id(s) provided' });
+    }
 
     const [sender, recipient] = await Promise.all([
       Participant.findById(senderId),

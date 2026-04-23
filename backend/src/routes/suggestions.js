@@ -1,9 +1,17 @@
 const router = require('express').Router();
+const mongoose = require('mongoose');
 const GiftSuggestion = require('../models/GiftSuggestion');
+
+function isValidId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
 
 router.post('/', async (req, res) => {
   try {
     const { participantId, eventId, suggestions } = req.body;
+    if (!isValidId(participantId) || !isValidId(eventId)) {
+      return res.status(400).json({ error: 'Invalid id(s) provided' });
+    }
     const doc = await GiftSuggestion.findOneAndUpdate(
       { participantId, eventId },
       { suggestions },

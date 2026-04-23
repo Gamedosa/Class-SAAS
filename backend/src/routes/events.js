@@ -33,7 +33,8 @@ router.put('/:id/close', async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found' });
-    if (event.sponsorPassword !== req.body.sponsorPassword) {
+    const passwordMatch = await event.checkPassword(req.body.sponsorPassword || '');
+    if (!passwordMatch) {
       return res.status(403).json({ error: 'Invalid sponsor password' });
     }
     event.status = 'closed';
